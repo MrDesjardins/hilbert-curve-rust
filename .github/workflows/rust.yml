@@ -66,9 +66,7 @@ jobs:
           echo "$HOME/.local/bin" >> $GITHUB_PATH
 
       - name: Test + Coverage
-        uses: actions-rs/cargo@v1
-        with:
-          command: ./coverage.sh
+        run: bash ${GITHUB_WORKSPACE}/coverage_ci.sh
 
       - name: Upload to codecov.io
         uses: codecov/codecov-action@v3
