@@ -1,5 +1,6 @@
 [package]
 name = "hilbert-curve-rust"
+description = "Basic Hilbert curve algorithm"
 version = "0.1.0"
 edition = "2021"
 authors = ["Patrick Desjardins <mrdesjardins@gmail.com>"]
