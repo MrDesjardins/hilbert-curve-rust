@@ -2,7 +2,11 @@
 name = "hilbert-curve-rust"
 version = "0.1.0"
 edition = "2021"
-
+authors = ["Patrick Desjardins <mrdesjardins@gmail.com>"]
+homepage = "https://github.com/MrDesjardins/hilbert-curve-rust"
+repository = "https://github.com/MrDesjardins/hilbert-curve-rust"
+license = "MIT OR Apache-2.0"
+keywords = ["hilbert", "hilbert-curve"]
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
