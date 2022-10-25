@@ -2,6 +2,13 @@
 
 Rust implentation of the Hilbert Curve algoritm. The library allows to move from point to index and index to point.
 
+# Install
+
+```sh
+cargo add hilbert-curve-rust
+```
+Detail on [Crate.io](https://crates.io/crates/hilbert-curve-rust)
+
 # How to use?
 
 ## Index to point
