@@ -4,6 +4,7 @@
 [<img alt="crates.io" src="https://img.shields.io/crates/v/hilbert_curve_rust.svg?style=for-the-badge&color=fc8d62&logo=rust" height="20">](https://crates.io/crates/hilbert-curve-rust)
 [<img alt="docs.rs" src="https://img.shields.io/badge/docs.hilbert_curve_rust-66c2a5?style=for-the-badge&labelColor=555555&logo=docs.rs" height="20">](https://docs.rs/starter_project)
 [<img alt="build status" src="https://img.shields.io/github/workflow/status/mrdesjardins/hilbert-curve-rust/Build/master?style=for-the-badge" height="20">](https://github.com/mrdesjardins/hilbert-curve-rust/actions?query=branch%3Amaster)
+[![codecov](https://codecov.io/gh/MrDesjardins/hilbert-curve-rust/branch/main/graph/badge.svg?token=TWHYC1X1KQ)](https://codecov.io/gh/MrDesjardins/hilbert-curve-rust)
 
 
 Rust implentation of the Hilbert Curve algoritm. The library moves from point (x, y) to index (z) and index (z) to point (x, y).
