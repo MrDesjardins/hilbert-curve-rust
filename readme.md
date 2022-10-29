@@ -1,9 +1,9 @@
 # Hilbert Curve Algorithm
 
-[<img alt="github" src="https://img.shields.io/badge/github-mrdesjardins/hilbert_curve_rust-8dagcb?style=for-the-badge&labelColor=555555&logo=github" height="20">](https://github.com/MrDesjardins/hilbert-curve-rust)
-[<img alt="crates.io" src="https://img.shields.io/crates/v/hilbert_curve_rust.svg?style=for-the-badge&color=fc8d62&logo=rust" height="20">](https://crates.io/crates/hilbert-curve-rust)
-[<img alt="docs.rs" src="https://img.shields.io/badge/docs.hilbert_curve_rust-66c2a5?style=for-the-badge&labelColor=555555&logo=docs.rs" height="20">](https://docs.rs/hilbert-curve-rust/latest/hilbert_curve_rust)
-[<img alt="build status" src="https://img.shields.io/github/workflow/status/mrdesjardins/hilbert-curve-rust/rust.yml?style=for-the-badge" height="20">](https://github.com/mrdesjardins/hilbert-curve-rust/actions?query=branch%3Amain)
+[<img alt="github" src="https://img.shields.io/badge/github-mrdesjardins/hilbert_curve_rust-8dagcb?labelColor=555555&logo=github" height="20">](https://github.com/MrDesjardins/hilbert-curve-rust)
+[![Rust Build, Test and Coverage](https://github.com/MrDesjardins/hilbert-curve-rust/actions/workflows/rust.yml/badge.svg)](https://github.com/MrDesjardins/hilbert-curve-rust/actions/workflows/rust.yml)
+[<img alt="crates.io" src="https://img.shields.io/crates/v/hilbert_curve_rust.svg?color=fc8d62&logo=rust" height="20">](https://crates.io/crates/hilbert-curve-rust)
+[<img alt="docs.rs" src="https://img.shields.io/badge/docs.hilbert_curve_rust-66c2a5?labelColor=555555&logo=docs.rs" height="20">](https://docs.rs/hilbert-curve-rust/latest/hilbert_curve_rust)
 [![codecov](https://codecov.io/gh/MrDesjardins/hilbert-curve-rust/branch/main/graph/badge.svg?token=TWHYC1X1KQ)](https://codecov.io/gh/MrDesjardins/hilbert-curve-rust)
 
 Rust implentation of the Hilbert Curve algoritm. The library moves from point (x, y) to index (z) and index (z) to point (x, y).
@@ -33,7 +33,7 @@ let point = hilbert_curve.index_to_point(0); // Get the point for index 0
 
 ### Point to index
 
-Two dimensionals coordinate into a ingle dimension integer.
+Two dimensionals coordinate into a single dimension integer.
 
 ```rust
 let hilbert_curve = HilbertCurveAlgorithm::new(1);// Set the Hilbert order here
@@ -58,11 +58,7 @@ rustup component add llvm-tools-preview
 Then, you can run:
 
 ```sh
-export RUSTFLAGS="-Cinstrument-coverage"
-cargo build
-export LLVM_PROFILE_FILE="hilbertcurve-%p-%m.profraw"
-cargo test
-grcov . -s . --binary-path ./target/debug/ -t html --branch --ignore-not-existing -o ./target/debug/coverage/
+./coverage.sh
 ```
 
 Further explanation in the [Mozilla grcov website](https://github.com/mozilla/grcov)
@@ -72,3 +68,27 @@ Further explanation in the [Mozilla grcov website](https://github.com/mozilla/gr
 ```sh
 cargo doc --open
 ```
+
+# Benchmark
+
+```sh
+cargo bench
+```
+
+## Publishing
+
+```sh
+cargo login
+cargo publish --dry-run
+cargo publish
+```
+
+# Performance Compared to other Rust Libraries
+
+| Library                                                                  |      Mean |
+| ------------------------------------------------------------------------ | --------: |
+| [fast_hilbert](https://crates.io/crates/fast_hilbert)                    | 0.3364 ms |
+| [hilbert_curve](https://crates.io/crates/hilbert_curve)                  | 0.7496 ms |
+| [hilbert_2d](https://crates.io/crates/hilbert_2d)                        | 1.2898 ms |
+| [hilbert-curve-rust](https://github.com/MrDesjardins/hilbert-curve-rust) | 4.0490 ms |
+| [hilbert](https://crates.io/crates/hilbert)                              | 9.2606 ms |
