@@ -85,6 +85,10 @@ cargo publish
 
 # Performance Compared to other Rust Libraries
 
+# Comparing on Order 8
+
+The benchmark finds all index of each position (x,y) has an average time to scan all position
+
 | Library                                                                  |      Mean |
 | ------------------------------------------------------------------------ | --------: |
 | [fast_hilbert](https://crates.io/crates/fast_hilbert)                    | 0.3364 ms |
@@ -92,3 +96,10 @@ cargo publish
 | [hilbert_2d](https://crates.io/crates/hilbert_2d)                        | 1.2898 ms |
 | [hilbert-curve-rust](https://github.com/MrDesjardins/hilbert-curve-rust) | 4.0490 ms |
 | [hilbert](https://crates.io/crates/hilbert)                              | 9.2606 ms |
+
+# Comparing Each Framework on Multiple Orders
+
+The test loops all x,y to find the index. Here are the average of each framework.
+
+![](./images/plot_comparison_algos.png)
+The plot shows that this current package start not performing as well as the [hilbert_2d](https://crates.io/crates/hilbert_2d) or the [fast_hilbert](https://crates.io/crates/fast_hilbert) above 10 orders. Meaning that if you need more than a grid of 1024 by 1024 (~1 million pixel) that this library starts to under perform. What is interesting is to see the [hilbert_curve](https://crates.io/crates/hilbert_curve) performing way better since this library is using the same algorithm implemented differently. Future improvement of this library will be applied as my knowledge of Rust improve.
