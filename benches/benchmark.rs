@@ -68,7 +68,7 @@ fn criterion_individual_benchmark(c: &mut Criterion) {
 
 fn criterion_compare_order_benchmark(c: &mut Criterion) {
     let mut group = c.benchmark_group("Order Benchmarks");
-    for order in 6..14 {
+    for order in 6..18 {
         let row = u32::pow(2, order);
         group.bench_with_input(
             BenchmarkId::new("Hilber-Curve-Rust", order),
@@ -100,7 +100,7 @@ fn criterion_compare_order_benchmark(c: &mut Criterion) {
                 })
             },
         );
-        group.bench_with_input(BenchmarkId::new("hilbert", order), &order, |b, order| {
+/*         group.bench_with_input(BenchmarkId::new("hilbert", order), &order, |b, order| {
             b.iter(|| {
                 for x in 0..row {
                     for y in 0..row {
@@ -109,7 +109,7 @@ fn criterion_compare_order_benchmark(c: &mut Criterion) {
                     }
                 }
             });
-        });
+        }); */
         group.bench_with_input(BenchmarkId::new("hilbert_2d", order), &order, |b, order| {
             b.iter(|| {
                 for x in 0..row {
@@ -148,6 +148,6 @@ fn criterion_compare_order_benchmark(c: &mut Criterion) {
 criterion_group!(
     name = benches;
     config = Criterion::default().sample_size(10);
-    targets = criterion_individual_benchmark, criterion_compare_order_benchmark
+    targets = criterion_compare_order_benchmark, criterion_individual_benchmark
 );
 criterion_main!(benches);

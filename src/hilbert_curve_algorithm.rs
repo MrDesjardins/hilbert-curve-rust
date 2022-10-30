@@ -1,4 +1,5 @@
 use crate::coordinate_value::CoordinateValue;
+use std::mem;
 
 pub struct HilbertCurveAlgorithm {
     order: u16,
@@ -25,8 +26,8 @@ impl HilbertCurveAlgorithm {
         while order_index < number_row {
             rx = self.get_rx(quadrant);
             ry = self.get_ry(quadrant, rx);
-            point = HilbertCurveAlgorithm::rotate_point(point.clone(), rx, ry, order_index); // Rotate depending on rx and ry value
-            point = HilbertCurveAlgorithm::move_point(point, rx, ry, order_index);
+            HilbertCurveAlgorithm::rotate_point(&mut point, rx, ry, order_index); // Rotate depending on rx and ry value
+            HilbertCurveAlgorithm::move_point(&mut point, rx, ry, order_index);
             quadrant = quadrant / 4; // 4 point per quadrant, hence we jump by 4
             order_index = order_index * 2; // Each order double the size of element per row (and column)
         }
@@ -38,18 +39,18 @@ impl HilbertCurveAlgorithm {
         if point.x >= number_of_row || point.y >= number_of_row {
             panic!("The point must be in range with the order");
         }
-        let mut rx: u32;
-        let mut ry: u32;
+        let mut rx: u32 = 0;
+        let mut ry: u32 = 0;
         let mut index: u32 = 0;
 
         let mut row_index = number_of_row / 2;
-        let mut new_point = point.clone();
+        let mut new_point = point.clone(); // Ensure we are not mutating the original
         while row_index > 0 {
-            rx = HilbertCurveAlgorithm::get_rx_from_point(new_point, row_index);
-            ry = HilbertCurveAlgorithm::get_ry_from_point(new_point, row_index);
+            HilbertCurveAlgorithm::update_rx_from_point(&mut rx, new_point, row_index);
+            HilbertCurveAlgorithm::update_ry_from_point(&mut ry, new_point, row_index);
             index += HilbertCurveAlgorithm::get_new_index_from_rows(row_index, rx, ry);
-            new_point = HilbertCurveAlgorithm::rotate_point(new_point, rx, ry, number_of_row);
-            row_index = ((row_index as f32) / 2.0).floor() as u32;
+            HilbertCurveAlgorithm::rotate_point(&mut new_point, rx, ry, number_of_row);
+            row_index /= 2;
         }
 
         return index;
@@ -63,47 +64,28 @@ impl HilbertCurveAlgorithm {
         let and_op: u32 = 1 & asd;
         return and_op;
     }
-    fn rotate_point(
-        mut point: CoordinateValue,
-        rx: u32,
-        ry: u32,
-        number_columns: u32,
-    ) -> CoordinateValue {
+    fn rotate_point(mut point: &mut CoordinateValue, rx: u32, ry: u32, number_columns: u32) -> () {
         if ry == 0 {
             if rx == 1 {
-                let new_x = number_columns as i32 - 1 - point.x as i32;
-                let new_y = number_columns as i32 - 1 - point.y as i32;
-
-                if new_x < 0 {
-                    panic!("Number of column must be at least 1 above x")
-                }
-                if new_y < 0 {
-                    panic!("Number of column must be at least 1 above y")
-                }
-                point.x = new_x.try_into().unwrap();
-                point.y = new_y.try_into().unwrap();
+                point.x = number_columns as u32 - 1 - point.x as u32;
+                point.y = number_columns as u32 - 1 - point.y as u32;
             }
-            let tmp = point.x;
-            point.x = point.y;
-            point.y = tmp;
+            mem::swap(&mut point.x, &mut point.y);
         }
-        return point;
     }
-    fn move_point(point: CoordinateValue, rx: u32, ry: u32, order_index: u32) -> CoordinateValue {
-        return CoordinateValue {
-            x: point.x + order_index * rx,
-            y: point.y + order_index * ry,
-        };
+    fn move_point(mut point: &mut CoordinateValue, rx: u32, ry: u32, order_index: u32) -> () {
+        point.x = point.x + order_index * rx;
+        point.y = point.y + order_index * ry;
     }
 
-    fn get_rx_from_point(point: CoordinateValue, order_index: u32) -> u32 {
-        return HilbertCurveAlgorithm::get_point_value_from_number(point.x, order_index);
+    fn update_rx_from_point(rx: &mut u32, point: CoordinateValue, order_index: u32) -> () {
+        *rx = HilbertCurveAlgorithm::update_point_value_from_number(point.x, order_index);
     }
 
-    fn get_ry_from_point(point: CoordinateValue, order_index: u32) -> u32 {
-        return HilbertCurveAlgorithm::get_point_value_from_number(point.y, order_index);
+    fn update_ry_from_point(ry: &mut u32, point: CoordinateValue, order_index: u32) -> () {
+        *ry = HilbertCurveAlgorithm::update_point_value_from_number(point.y, order_index);
     }
-    fn get_point_value_from_number(number_n: u32, order_index: u32) -> u32 {
+    fn update_point_value_from_number(number_n: u32, order_index: u32) -> u32 {
         let and_result = number_n & order_index; // 0, 1, 2
         return if and_result > 0 { 1 } else { 0 };
     }
@@ -183,10 +165,10 @@ mod test_move_point {
         let order = 1;
         let rx = 0;
         let ry = 0;
-        let point = CoordinateValue { x: 123, y: 456 };
-        let result = HilbertCurveAlgorithm::move_point(point, rx, ry, order);
-        assert_eq!(result.x, 123);
-        assert_eq!(result.y, 456);
+        let mut point = CoordinateValue { x: 123, y: 456 };
+        HilbertCurveAlgorithm::move_point(&mut point, rx, ry, order);
+        assert_eq!(point.x, 123);
+        assert_eq!(point.y, 456);
     }
 
     #[test]
@@ -194,10 +176,10 @@ mod test_move_point {
         let order = 1;
         let rx = 1;
         let ry = 0;
-        let point = CoordinateValue { x: 123, y: 456 };
-        let result = HilbertCurveAlgorithm::move_point(point, rx, ry, order);
-        assert_eq!(result.x, 124);
-        assert_eq!(result.y, 456);
+        let mut point = CoordinateValue { x: 123, y: 456 };
+        HilbertCurveAlgorithm::move_point(&mut point, rx, ry, order);
+        assert_eq!(point.x, 124);
+        assert_eq!(point.y, 456);
     }
 
     #[test]
@@ -205,10 +187,10 @@ mod test_move_point {
         let order = 1;
         let rx = 0;
         let ry = 0;
-        let point = CoordinateValue { x: 123, y: 456 };
-        let result = HilbertCurveAlgorithm::move_point(point, rx, ry, order);
-        assert_eq!(result.x, 123);
-        assert_eq!(result.y, 456);
+        let mut point = CoordinateValue { x: 123, y: 456 };
+        HilbertCurveAlgorithm::move_point(&mut point, rx, ry, order);
+        assert_eq!(point.x, 123);
+        assert_eq!(point.y, 456);
     }
 
     #[test]
@@ -216,20 +198,20 @@ mod test_move_point {
         let order = 1;
         let rx = 0;
         let ry = 1;
-        let point = CoordinateValue { x: 123, y: 456 };
-        let result = HilbertCurveAlgorithm::move_point(point, rx, ry, order);
-        assert_eq!(result.x, 123);
-        assert_eq!(result.y, 457);
+        let mut point = CoordinateValue { x: 123, y: 456 };
+        HilbertCurveAlgorithm::move_point(&mut point, rx, ry, order);
+        assert_eq!(point.x, 123);
+        assert_eq!(point.y, 457);
     }
     #[test]
     fn internal_move_point_order_2_rx_0_no_move() {
         let order = 2;
         let rx = 0;
         let ry = 0;
-        let point = CoordinateValue { x: 123, y: 456 };
-        let result = HilbertCurveAlgorithm::move_point(point, rx, ry, order);
-        assert_eq!(result.x, 123);
-        assert_eq!(result.y, 456);
+        let mut point = CoordinateValue { x: 123, y: 456 };
+        HilbertCurveAlgorithm::move_point(&mut point, rx, ry, order);
+        assert_eq!(point.x, 123);
+        assert_eq!(point.y, 456);
     }
 
     #[test]
@@ -237,10 +219,10 @@ mod test_move_point {
         let order = 2;
         let rx = 1;
         let ry = 0;
-        let point = CoordinateValue { x: 123, y: 456 };
-        let result = HilbertCurveAlgorithm::move_point(point, rx, ry, order);
-        assert_eq!(result.x, 125);
-        assert_eq!(result.y, 456);
+        let mut point = CoordinateValue { x: 123, y: 456 };
+        HilbertCurveAlgorithm::move_point(&mut point, rx, ry, order);
+        assert_eq!(point.x, 125);
+        assert_eq!(point.y, 456);
     }
 
     #[test]
@@ -248,10 +230,10 @@ mod test_move_point {
         let order = 2;
         let rx = 0;
         let ry = 0;
-        let point = CoordinateValue { x: 123, y: 456 };
-        let result = HilbertCurveAlgorithm::move_point(point, rx, ry, order);
-        assert_eq!(result.x, 123);
-        assert_eq!(result.y, 456);
+        let mut point = CoordinateValue { x: 123, y: 456 };
+        HilbertCurveAlgorithm::move_point(&mut point, rx, ry, order);
+        assert_eq!(point.x, 123);
+        assert_eq!(point.y, 456);
     }
 
     #[test]
@@ -259,10 +241,10 @@ mod test_move_point {
         let order = 2;
         let rx = 0;
         let ry = 1;
-        let point = CoordinateValue { x: 123, y: 456 };
-        let result = HilbertCurveAlgorithm::move_point(point, rx, ry, order);
-        assert_eq!(result.x, 123);
-        assert_eq!(result.y, 458);
+        let mut point = CoordinateValue { x: 123, y: 456 };
+        HilbertCurveAlgorithm::move_point(&mut point, rx, ry, order);
+        assert_eq!(point.x, 123);
+        assert_eq!(point.y, 458);
     }
 }
 
@@ -271,32 +253,92 @@ mod test_get_point_value_from_number {
     use super::*;
     #[test]
     fn internal_get_point_value_from_number_order1() {
-        assert_eq!(0, HilbertCurveAlgorithm::get_point_value_from_number(0, 1));
-        assert_eq!(1, HilbertCurveAlgorithm::get_point_value_from_number(1, 1));
-        assert_eq!(0, HilbertCurveAlgorithm::get_point_value_from_number(2, 1));
-        assert_eq!(1, HilbertCurveAlgorithm::get_point_value_from_number(3, 1));
+        assert_eq!(
+            0,
+            HilbertCurveAlgorithm::update_point_value_from_number(0, 1)
+        );
+        assert_eq!(
+            1,
+            HilbertCurveAlgorithm::update_point_value_from_number(1, 1)
+        );
+        assert_eq!(
+            0,
+            HilbertCurveAlgorithm::update_point_value_from_number(2, 1)
+        );
+        assert_eq!(
+            1,
+            HilbertCurveAlgorithm::update_point_value_from_number(3, 1)
+        );
     }
     #[test]
     fn internal_get_point_value_from_number_order2() {
-        assert_eq!(0, HilbertCurveAlgorithm::get_point_value_from_number(0, 2));
-        assert_eq!(0, HilbertCurveAlgorithm::get_point_value_from_number(1, 2));
-        assert_eq!(1, HilbertCurveAlgorithm::get_point_value_from_number(2, 2));
-        assert_eq!(1, HilbertCurveAlgorithm::get_point_value_from_number(3, 2));
-        assert_eq!(0, HilbertCurveAlgorithm::get_point_value_from_number(4, 2));
-        assert_eq!(0, HilbertCurveAlgorithm::get_point_value_from_number(5, 2));
-        assert_eq!(1, HilbertCurveAlgorithm::get_point_value_from_number(6, 2));
-        assert_eq!(1, HilbertCurveAlgorithm::get_point_value_from_number(7, 2));
+        assert_eq!(
+            0,
+            HilbertCurveAlgorithm::update_point_value_from_number(0, 2)
+        );
+        assert_eq!(
+            0,
+            HilbertCurveAlgorithm::update_point_value_from_number(1, 2)
+        );
+        assert_eq!(
+            1,
+            HilbertCurveAlgorithm::update_point_value_from_number(2, 2)
+        );
+        assert_eq!(
+            1,
+            HilbertCurveAlgorithm::update_point_value_from_number(3, 2)
+        );
+        assert_eq!(
+            0,
+            HilbertCurveAlgorithm::update_point_value_from_number(4, 2)
+        );
+        assert_eq!(
+            0,
+            HilbertCurveAlgorithm::update_point_value_from_number(5, 2)
+        );
+        assert_eq!(
+            1,
+            HilbertCurveAlgorithm::update_point_value_from_number(6, 2)
+        );
+        assert_eq!(
+            1,
+            HilbertCurveAlgorithm::update_point_value_from_number(7, 2)
+        );
     }
     #[test]
     fn internal_get_point_value_from_number_order4() {
-        assert_eq!(0, HilbertCurveAlgorithm::get_point_value_from_number(0, 4));
-        assert_eq!(0, HilbertCurveAlgorithm::get_point_value_from_number(1, 4));
-        assert_eq!(0, HilbertCurveAlgorithm::get_point_value_from_number(2, 4));
-        assert_eq!(0, HilbertCurveAlgorithm::get_point_value_from_number(3, 4));
-        assert_eq!(1, HilbertCurveAlgorithm::get_point_value_from_number(4, 4));
-        assert_eq!(1, HilbertCurveAlgorithm::get_point_value_from_number(5, 4));
-        assert_eq!(1, HilbertCurveAlgorithm::get_point_value_from_number(6, 4));
-        assert_eq!(1, HilbertCurveAlgorithm::get_point_value_from_number(7, 4));
+        assert_eq!(
+            0,
+            HilbertCurveAlgorithm::update_point_value_from_number(0, 4)
+        );
+        assert_eq!(
+            0,
+            HilbertCurveAlgorithm::update_point_value_from_number(1, 4)
+        );
+        assert_eq!(
+            0,
+            HilbertCurveAlgorithm::update_point_value_from_number(2, 4)
+        );
+        assert_eq!(
+            0,
+            HilbertCurveAlgorithm::update_point_value_from_number(3, 4)
+        );
+        assert_eq!(
+            1,
+            HilbertCurveAlgorithm::update_point_value_from_number(4, 4)
+        );
+        assert_eq!(
+            1,
+            HilbertCurveAlgorithm::update_point_value_from_number(5, 4)
+        );
+        assert_eq!(
+            1,
+            HilbertCurveAlgorithm::update_point_value_from_number(6, 4)
+        );
+        assert_eq!(
+            1,
+            HilbertCurveAlgorithm::update_point_value_from_number(7, 4)
+        );
     }
 }
 
@@ -305,80 +347,95 @@ mod test_rotate_point {
     use super::*;
     #[test]
     fn internal_rotate_point_0_0_col1_x_0_y_0() {
-        let result = HilbertCurveAlgorithm::rotate_point(CoordinateValue { x: 0, y: 0 }, 0, 0, 1);
-        assert_eq!(0, result.x, "X value is wrong");
-        assert_eq!(0, result.y, "Y value is wrong");
+        let mut coordinate = CoordinateValue { x: 0, y: 0 };
+        HilbertCurveAlgorithm::rotate_point(&mut coordinate, 0, 0, 1);
+        assert_eq!(0, coordinate.x, "X value is wrong");
+        assert_eq!(0, coordinate.y, "Y value is wrong");
     }
     #[test]
     fn internal_rotate_point_0_0_col1_x_0_y_1() {
-        let result = HilbertCurveAlgorithm::rotate_point(CoordinateValue { x: 0, y: 0 }, 0, 1, 1);
-        assert_eq!(0, result.x, "X value is wrong");
-        assert_eq!(0, result.y, "Y value is wrong");
+        let mut coordinate = CoordinateValue { x: 0, y: 0 };
+        HilbertCurveAlgorithm::rotate_point(&mut coordinate, 0, 1, 1);
+        assert_eq!(0, coordinate.x, "X value is wrong");
+        assert_eq!(0, coordinate.y, "Y value is wrong");
     }
     #[test]
     fn internal_rotate_point_0_0_col1_x_1_y_0() {
-        let result = HilbertCurveAlgorithm::rotate_point(CoordinateValue { x: 0, y: 0 }, 1, 0, 1);
-        assert_eq!(0, result.x, "X value is wrong");
-        assert_eq!(0, result.y, "Y value is wrong");
+        let mut coordinate = CoordinateValue { x: 0, y: 0 };
+        HilbertCurveAlgorithm::rotate_point(&mut coordinate, 1, 0, 1);
+        assert_eq!(0, coordinate.x, "X value is wrong");
+        assert_eq!(0, coordinate.y, "Y value is wrong");
     }
     #[test]
     fn internal_rotate_point_1_1_col1_x_1_y_0() {
-        let result = HilbertCurveAlgorithm::rotate_point(CoordinateValue { x: 1, y: 1 }, 1, 0, 2);
-        assert_eq!(0, result.x, "X value is wrong");
-        assert_eq!(0, result.y, "Y value is wrong");
+        let mut coordinate = CoordinateValue { x: 1, y: 1 };
+        HilbertCurveAlgorithm::rotate_point(&mut coordinate, 1, 0, 2);
+        assert_eq!(0, coordinate.x, "X value is wrong");
+        assert_eq!(0, coordinate.y, "Y value is wrong");
     }
     #[test]
     fn internal_rotate_point_0_0_col1_x_1_y_1() {
-        let result = HilbertCurveAlgorithm::rotate_point(CoordinateValue { x: 0, y: 0 }, 1, 1, 1);
-        assert_eq!(0, result.x, "X value is wrong");
-        assert_eq!(0, result.y, "Y value is wrong");
+        let mut coordinate = CoordinateValue { x: 0, y: 0 };
+        HilbertCurveAlgorithm::rotate_point(&mut coordinate, 1, 1, 1);
+        assert_eq!(0, coordinate.x, "X value is wrong");
+        assert_eq!(0, coordinate.y, "Y value is wrong");
     }
     #[test]
     fn internal_rotate_point_1_1_col1_x_1_y_1() {
-        let result = HilbertCurveAlgorithm::rotate_point(CoordinateValue { x: 1, y: 1 }, 1, 1, 2);
-        assert_eq!(1, result.x, "X value is wrong");
-        assert_eq!(1, result.y, "Y value is wrong");
+        let mut coordinate = CoordinateValue { x: 1, y: 1 };
+        HilbertCurveAlgorithm::rotate_point(&mut coordinate, 1, 1, 2);
+        assert_eq!(1, coordinate.x, "X value is wrong");
+        assert_eq!(1, coordinate.y, "Y value is wrong");
+    }
+    #[test]
+    fn internal_rotate_point_1_2_col1_x_0_y_1() {
+        let mut coordinate = CoordinateValue { x: 1, y: 2 };
+        HilbertCurveAlgorithm::rotate_point(&mut coordinate, 0, 1, 2);
+        assert_eq!(1, coordinate.x, "X value is wrong");
+        assert_eq!(2, coordinate.y, "Y value is wrong");
+    }
+    #[test]
+    fn internal_rotate_point_1_2_col1_x_0_y_0() {
+        let mut coordinate = CoordinateValue { x: 1, y: 2 };
+        HilbertCurveAlgorithm::rotate_point(&mut coordinate, 0, 0, 2);
+        assert_eq!(2, coordinate.x, "X value is wrong");
+        assert_eq!(1, coordinate.y, "Y value is wrong");
     }
 
     #[test]
     fn internal_rotate_point_numbercolumn_8_point_0_0_x_0_y_0() {
-        let result = HilbertCurveAlgorithm::rotate_point(CoordinateValue { x: 0, y: 0 }, 0, 0, 8);
-        assert_eq!(0, result.x, "X value is wrong");
-        assert_eq!(0, result.y, "Y value is wrong");
+        let mut coordinate = CoordinateValue { x: 0, y: 0 };
+        HilbertCurveAlgorithm::rotate_point(&mut coordinate, 0, 0, 8);
+        assert_eq!(0, coordinate.x, "X value is wrong");
+        assert_eq!(0, coordinate.y, "Y value is wrong");
     }
     #[test]
     fn internal_rotate_point_numbercolumn_8_point_0_0_x_0_y_1() {
-        let result = HilbertCurveAlgorithm::rotate_point(CoordinateValue { x: 0, y: 0 }, 0, 1, 8);
-        assert_eq!(0, result.x, "X value is wrong");
-        assert_eq!(0, result.y, "Y value is wrong");
+        let mut coordinate = CoordinateValue { x: 0, y: 0 };
+        HilbertCurveAlgorithm::rotate_point(&mut coordinate, 0, 1, 8);
+        assert_eq!(0, coordinate.x, "X value is wrong");
+        assert_eq!(0, coordinate.y, "Y value is wrong");
     }
     #[test]
     fn internal_rotate_point_numbercolumn_8_point_0_0_x_1_y_0() {
-        let result = HilbertCurveAlgorithm::rotate_point(CoordinateValue { x: 0, y: 0 }, 1, 0, 8);
-        assert_eq!(7, result.x, "X value is wrong");
-        assert_eq!(7, result.y, "Y value is wrong");
+        let mut coordinate = CoordinateValue { x: 0, y: 0 };
+        HilbertCurveAlgorithm::rotate_point(&mut coordinate, 1, 0, 8);
+        assert_eq!(7, coordinate.x, "X value is wrong");
+        assert_eq!(7, coordinate.y, "Y value is wrong");
     }
     #[test]
     fn internal_rotate_point_numbercolumn_8_point_1_1_x_1_y_0() {
-        let result = HilbertCurveAlgorithm::rotate_point(CoordinateValue { x: 1, y: 1 }, 1, 0, 8);
-        assert_eq!(6, result.x, "X value is wrong");
-        assert_eq!(6, result.y, "Y value is wrong");
+        let mut coordinate = CoordinateValue { x: 1, y: 1 };
+        HilbertCurveAlgorithm::rotate_point(&mut coordinate, 1, 0, 8);
+        assert_eq!(6, coordinate.x, "X value is wrong");
+        assert_eq!(6, coordinate.y, "Y value is wrong");
     }
     #[test]
     fn internal_rotate_point_numbercolumn_8_point_0_0_x_1_y_1() {
-        let result = HilbertCurveAlgorithm::rotate_point(CoordinateValue { x: 0, y: 0 }, 1, 1, 8);
-        assert_eq!(0, result.x, "X value is wrong");
-        assert_eq!(0, result.y, "Y value is wrong");
-    }
-    #[test]
-    #[should_panic(expected = "Number of column must be at least 1 above x")]
-    fn internal_rotate_point_invalid_values_pointx() {
-        HilbertCurveAlgorithm::rotate_point(CoordinateValue { x: 10, y: 0 }, 1, 0, 1);
-    }
-    #[test]
-    #[should_panic(expected = "Number of column must be at least 1 above y")]
-    fn internal_rotate_point_invalid_values_pointy() {
-        HilbertCurveAlgorithm::rotate_point(CoordinateValue { x: 0, y: 10 }, 1, 0, 1);
+        let mut coordinate = CoordinateValue { x: 0, y: 0 };
+        HilbertCurveAlgorithm::rotate_point(&mut coordinate, 1, 1, 8);
+        assert_eq!(0, coordinate.x, "X value is wrong");
+        assert_eq!(0, coordinate.y, "Y value is wrong");
     }
 }
 

@@ -72,7 +72,7 @@ cargo doc --open
 # Benchmark
 
 ```sh
-cargo bench
+./benchmark.sh
 ```
 
 ## Publishing
@@ -85,7 +85,7 @@ cargo publish
 
 # Performance Compared to other Rust Libraries
 
-# Comparing on Order 8
+## Comparing on Order 8
 
 The benchmark finds all index of each position (x,y) has an average time to scan all position
 
@@ -93,13 +93,29 @@ The benchmark finds all index of each position (x,y) has an average time to scan
 | ------------------------------------------------------------------------ | --------: |
 | [fast_hilbert](https://crates.io/crates/fast_hilbert)                    | 0.3364 ms |
 | [hilbert_curve](https://crates.io/crates/hilbert_curve)                  | 0.7496 ms |
-| [hilbert_2d](https://crates.io/crates/hilbert_2d)                        | 1.2898 ms |
-| [hilbert-curve-rust](https://github.com/MrDesjardins/hilbert-curve-rust) | 4.0490 ms |
-| [hilbert](https://crates.io/crates/hilbert)                              | 9.2606 ms |
+| [hilbert-curve-rust](https://github.com/MrDesjardins/hilbert-curve-rust) | 1.0290 ms |
+| [hilbert_2d](https://crates.io/crates/hilbert_2d)                        | 1.3298 ms |
+| [hilbert](https://crates.io/crates/hilbert)                              | 9.9606 ms |
 
-# Comparing Each Framework on Multiple Orders
+## Comparing Each Framework on Multiple Orders
 
-The test loops all x,y to find the index. Here are the average of each framework.
+The test loops all x, y coordinates to find the index. Here are the average of each framework.
 
 ![](./images/plot_comparison_algos.png)
-The plot shows that this current package start not performing as well as the [hilbert_2d](https://crates.io/crates/hilbert_2d) or the [fast_hilbert](https://crates.io/crates/fast_hilbert) above 10 orders. Meaning that if you need more than a grid of 1024 by 1024 (~1 million pixel) that this library starts to under perform. What is interesting is to see the [hilbert_curve](https://crates.io/crates/hilbert_curve) performing way better since this library is using the same algorithm implemented differently. Future improvement of this library will be applied as my knowledge of Rust improve.
+
+The plot shows three clear groups. The worse algorithm is the [hilbert](https://crates.io/crates/hilbert), which goes exponentially worse after an order of `10`.
+
+A second group that contains this library ([hilbert-curve-rust](https://github.com/MrDesjardins/hilbert-curve-rust)) where performance is more stable but starts to get worse around an order `12`.
+
+The last group with one algorithm, the [fast_hilbert](https://crates.io/crates/fast_hilbert), is the clear fastest algorithm.
+
+From some perspective, a grid of 1024 by 1024 (~1 million points/pixels) is good with any library. However, if you need to start having a grid of 8192 by 8192 (order 13, with 67 million points/pixels), then it might be better to use the [fast_hilbert](https://crates.io/crates/fast_hilbert). The plot shows the second group next to the best group, but the reality is that [fast_hilbert](https://crates.io/crates/fast_hilbert) can be 10x faster than the three next contenders.
+
+# Performance Learning Experience
+
+Reduced the benchmark by about 3 seconds by using reference instead of copying value in functions `update_rx_from_point`, `update_ry_from_point`, `update_point_value_from_number`, `move_point` and `rotate_point`.
+
+![](./images/plot_comparison_improvement_order8.png)
+
+The plot shows the previous benchmark in red and the change of using reference instead of immutable in blue. By removing the copy of objects and passing a reference, the program needs to create less memory and only change the value in specific memory. The gain was significant.
+
