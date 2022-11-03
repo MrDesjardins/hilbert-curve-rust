@@ -28,10 +28,10 @@ impl HilbertCurveAlgorithm {
             ry = self.get_ry(quadrant, rx);
             HilbertCurveAlgorithm::rotate_point(&mut point, rx, ry, order_index); // Rotate depending on rx and ry value
             HilbertCurveAlgorithm::move_point(&mut point, rx, ry, order_index);
-            quadrant = quadrant / 4; // 4 point per quadrant, hence we jump by 4
-            order_index = order_index * 2; // Each order double the size of element per row (and column)
+            quadrant /= 4; // 4 point per quadrant, hence we jump by 4
+            order_index *= 2; // Each order double the size of element per row (and column)
         }
-        return point;
+        point
     }
 
     pub fn point_to_index(&self, point: CoordinateValue) -> u32 {
@@ -44,7 +44,7 @@ impl HilbertCurveAlgorithm {
         let mut index: u32 = 0;
 
         let mut row_index = number_of_row / 2;
-        let mut new_point = point.clone(); // Ensure we are not mutating the original
+        let mut new_point = point; // Ensure we are not mutating the original
         while row_index > 0 {
             HilbertCurveAlgorithm::update_rx_from_point(&mut rx, new_point, row_index);
             HilbertCurveAlgorithm::update_ry_from_point(&mut ry, new_point, row_index);
@@ -53,60 +53,60 @@ impl HilbertCurveAlgorithm {
             row_index /= 2;
         }
 
-        return index;
+        index
     }
 
     fn get_rx(&self, quadrant: u32) -> u32 {
-        return 1 & (quadrant / 2);
+        1 & (quadrant / 2)
     }
     fn get_ry(&self, quadrant: u32, rx: u32) -> u32 {
         let asd: u32 = quadrant ^ rx;
         let and_op: u32 = 1 & asd;
-        return and_op;
+        and_op
     }
-    fn rotate_point(mut point: &mut CoordinateValue, rx: u32, ry: u32, number_columns: u32) -> () {
+    fn rotate_point(mut point: &mut CoordinateValue, rx: u32, ry: u32, number_columns: u32) {
         if ry == 0 {
             if rx == 1 {
-                point.x = number_columns as u32 - 1 - point.x as u32;
-                point.y = number_columns as u32 - 1 - point.y as u32;
+                point.x = number_columns - 1 - point.x;
+                point.y = number_columns - 1 - point.y;
             }
             mem::swap(&mut point.x, &mut point.y);
         }
     }
-    fn move_point(mut point: &mut CoordinateValue, rx: u32, ry: u32, order_index: u32) -> () {
-        point.x = point.x + order_index * rx;
-        point.y = point.y + order_index * ry;
+    fn move_point(mut point: &mut CoordinateValue, rx: u32, ry: u32, order_index: u32) {
+        point.x += order_index * rx;
+        point.y += order_index * ry;
     }
 
-    fn update_rx_from_point(rx: &mut u32, point: CoordinateValue, order_index: u32) -> () {
+    fn update_rx_from_point(rx: &mut u32, point: CoordinateValue, order_index: u32) {
         *rx = HilbertCurveAlgorithm::update_point_value_from_number(point.x, order_index);
     }
 
-    fn update_ry_from_point(ry: &mut u32, point: CoordinateValue, order_index: u32) -> () {
+    fn update_ry_from_point(ry: &mut u32, point: CoordinateValue, order_index: u32)  {
         *ry = HilbertCurveAlgorithm::update_point_value_from_number(point.y, order_index);
     }
     fn update_point_value_from_number(number_n: u32, order_index: u32) -> u32 {
         let and_result = number_n & order_index; // 0, 1, 2
-        return if and_result > 0 { 1 } else { 0 };
+        u32::from(and_result > 0) // Same as: if and_result > 0 { 1 } else { 0 }
     }
     fn get_new_index_from_rows(rows_index: u32, rx: u32, ry: u32) -> u32 {
-        return rows_index * rows_index * ((3 * rx) ^ ry);
+        rows_index * rows_index * ((3 * rx) ^ ry)
     }
     pub fn offset_point(&self, point: CoordinateValue, projection_width: u32) -> CoordinateValue {
         let number_of_row: u32 = u32::pow(2, self.order as u32);
         let len = projection_width / number_of_row;
-        return CoordinateValue {
+        CoordinateValue {
             x: point.x * len + len / 2,
             y: point.y * len + len / 2,
-        };
+        }
     }
     pub fn deoffset_point(&self, point: CoordinateValue, projection_width: u32) -> CoordinateValue {
         let number_of_row: u32 = u32::pow(2, self.order as u32);
         let len = projection_width / number_of_row;
-        return CoordinateValue {
+        CoordinateValue {
             x: point.x / len,
             y: point.y / len,
-        };
+        }
     }
 }
 
